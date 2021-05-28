@@ -9,7 +9,7 @@ from torch_geometric.data import InMemoryDataset, Data
 from torch.utils.data import  Dataset
 from torch.nn import Linear 
 import torch.optim as optim 
-from torch_geometric.nn import GCNConv
+from torch_geometric.nn import GCNConv, GATConv
 import time
 import tqdm 
 import random
@@ -132,6 +132,31 @@ class GCN_wisdm(torch.nn.Module):
         h = self.dropout(h)
         out = self.out(h)
         return out 
+
+class GCN_wisdm_Attn(torch.nn.Module):
+    def __init__(self, input_dim, num_class):
+        super(GCN_wisdm_Attn, self).__init__()
+        torch.manual_seed(12345)
+        self.conv1 = GATConv(input_dim, 64, heads=4, dropout = 0.6) #make sure to change later. 
+        self.dropout = nn.Dropout(0.5)
+        self.bn1 = nn.BatchNorm1d(256)
+        self.fc2 = nn.Linear(256, 128)
+        self.out = nn.Linear(128, num_class)
+        
+
+    def forward(self, x, edge_index):
+        h = self.conv1(x, edge_index)
+        h = h.relu()
+        h = self.dropout(h)
+        # Apply a final (linear) classifier.
+        h = self.bn1(h)
+        h = self.fc2(h)
+        h = h.relu()
+        h = self.dropout(h)
+        out = self.out(h)
+        return out 
+
+
 
 def average_weights(w):
     w_avg = copy.deepcopy(w[0])

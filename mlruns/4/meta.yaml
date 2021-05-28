@@ -1,0 +1,4 @@
+artifact_location: file:///C:/Users/abhi/Documents/GEEK/GNN/federatedGraphConv/mlruns/4
+experiment_id: '4'
+lifecycle_stage: active
+name: gnn_central_attention

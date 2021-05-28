@@ -1,2 +1,3 @@
-# federatedGraphConv
-Our experiments with Federated graph convolution networks and Graph attention networks
+# Federated Graph Convolution Networks and Graph Attention Networks 
+
+How is it like training a federated model on a Graph Neural network?  

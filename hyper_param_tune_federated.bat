@@ -1,0 +1,16 @@
+python scripts\gnn_fed.py --num_sample 128 --dist_thresh 1 --local_epochs 10 --num_rounds 10
+python scripts\gnn_fed.py --num_sample 32 --dist_thresh 1 --local_epochs 10 --num_rounds 10
+python scripts\gnn_fed.py --num_sample 32 --dist_thresh 1 --local_epochs 50 --num_rounds 10
+python scripts\gnn_fed.py --num_sample 32 --dist_thresh 1 --local_epochs 100 --num_rounds 10
+python scripts\gnn_fed.py --num_sample 32 --dist_thresh 1 --local_epochs 10 --num_rounds 50
+python scripts\gnn_fed.py --num_sample 32 --dist_thresh 1 --local_epochs 50 --num_rounds 50
+python scripts\gnn_fed.py --num_sample 32 --dist_thresh 1 --local_epochs 100 --num_rounds 50
+python scripts\gnn_fed.py --num_sample 32 --dist_thresh 1 --local_epochs 10 --num_rounds 100
+python scripts\gnn_fed.py --num_sample 32 --dist_thresh 1 --local_epochs 50 --num_rounds 100
+python scripts\gnn_fed.py --num_sample 32 --dist_thresh 1 --local_epochs 100 --num_rounds 100
+python scripts\gnn_fed.py --num_sample 32 --dist_thresh 1 --local_epochs 10 --num_rounds 500
+python scripts\gnn_fed.py --num_sample 32 --dist_thresh 1 --local_epochs 50 --num_rounds 500
+python scripts\gnn_fed.py --num_sample 32 --dist_thresh 1 --local_epochs 100 --num_rounds 500
+python scripts\gnn_fed.py --num_sample 32 --dist_thresh 1 --local_epochs 10 --num_rounds 1000
+python scripts\gnn_fed.py --num_sample 32 --dist_thresh 1 --local_epochs 50 --num_rounds 1000
+python scripts\gnn_fed.py --num_sample 32 --dist_thresh 1 --local_epochs 100 --num_rounds 1000 

@@ -1,0 +1,15 @@
+artifact_uri: file:///C:/Users/abhi/Documents/GEEK/GNN/ours/mlruns/1/8ae61a827a7a4495ae25ae8a08feafc0/artifacts
+end_time: 1616554104747
+entry_point_name: ''
+experiment_id: '1'
+lifecycle_stage: active
+name: ''
+run_id: 8ae61a827a7a4495ae25ae8a08feafc0
+run_uuid: 8ae61a827a7a4495ae25ae8a08feafc0
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1616554066789
+status: 3
+tags: []
+user_id: abhi

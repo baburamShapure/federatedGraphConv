@@ -1,0 +1,4 @@
+artifact_location: file:///C:/Users/abhi/Documents/GEEK/GNN/ours/mlruns/3
+experiment_id: '3'
+lifecycle_stage: active
+name: ffn_central

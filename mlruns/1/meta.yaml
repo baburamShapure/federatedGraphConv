@@ -1,0 +1,4 @@
+artifact_location: file:///C:/Users/abhi/Documents/GEEK/GNN/ours/mlruns/1
+experiment_id: '1'
+lifecycle_stage: active
+name: gnn_central

@@ -1,4 +1,4 @@
-notebooks/
-data/
-mlruns/
-results/
+/notebooks/*
+/data/*
+/mlruns/*
+/results/*

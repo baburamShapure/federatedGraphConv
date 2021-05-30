@@ -1,0 +1,15 @@
+artifact_uri: file:///C:/Users/abhi/Documents/GEEK/GNN/federatedGraphConv/mlruns/4/e773c764f31d4b5580b1a4eebad3ad4f/artifacts
+end_time: 1622298679681
+entry_point_name: ''
+experiment_id: '4'
+lifecycle_stage: active
+name: ''
+run_id: e773c764f31d4b5580b1a4eebad3ad4f
+run_uuid: e773c764f31d4b5580b1a4eebad3ad4f
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1622298631319
+status: 3
+tags: []
+user_id: abhi

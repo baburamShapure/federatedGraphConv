@@ -139,10 +139,9 @@ class GCN_wisdm_Attn(torch.nn.Module):
         torch.manual_seed(12345)
         self.conv1 = GATConv(input_dim, 64, heads=4, dropout = 0.6) #make sure to change later. 
         self.dropout = nn.Dropout(0.5)
-        self.bn1 = nn.BatchNorm1d(256)
-        self.fc2 = nn.Linear(256, 128)
-        self.out = nn.Linear(128, num_class)
-        
+        self.bn1 = nn.BatchNorm1d(64 * 4)
+        self.fc2 = nn.Linear(64 * 4, 128)
+        self.out = nn.Linear(128, num_class)    
 
     def forward(self, x, edge_index):
         h = self.conv1(x, edge_index)
@@ -155,8 +154,6 @@ class GCN_wisdm_Attn(torch.nn.Module):
         h = self.dropout(h)
         out = self.out(h)
         return out 
-
-
 
 def average_weights(w):
     w_avg = copy.deepcopy(w[0])

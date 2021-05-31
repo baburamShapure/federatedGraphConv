@@ -1,11 +1,12 @@
 import pandas as pd 
 import os 
-from utils import add_encoded_activity, average_slice, prepare_graph, write_graph
+from .utils import add_encoded_activity, average_slice, prepare_graph, write_graph
 import networkx as nx
 import numpy as np 
 import argparse
 
 parser = argparse.ArgumentParser()
+
 def prep_mhealth(num_sample,  dist_thresh, train_prop):
     # change to others. 
     DATADIR = 'data\MHEALTHDATASET'
@@ -31,7 +32,6 @@ def prep_mhealth(num_sample,  dist_thresh, train_prop):
             ar.to_csv(os.path.join('data\processed', user, 'train_mask.txt'), 
                                             header = None, index = None)
             write_graph(gr, os.path.join('data\processed', user))
-
 
 parser.add_argument('--num_sample', 
                     type = int,

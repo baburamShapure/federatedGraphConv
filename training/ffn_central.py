@@ -1,20 +1,24 @@
 """baseline central model using a feed-forward net 
 to compare with centralized gnn. 
 """
+import sys 
+import os 
+sys.path.insert(1, os.getcwd())
 import pandas as pd 
 import numpy as np 
-import os 
 import torch 
 import torch.nn as nn
 import tqdm 
 from mlflow import log_metric, log_param, log_artifacts
 import mlflow 
-from model_utils import SimpleHAR, FFN
+from fedgraphconv.models.model_utils import SimpleHAR, FFN
 from torch.utils.data import DataLoader, Dataset
 
 
 mlflow.set_experiment('ffn_central')
 datadir = 'data/processed'
+
+print('Current wd: {0}'.format(os.getcwd()))
 
 agents = os.listdir(datadir)
 

@@ -1,28 +1,30 @@
 """fit a centralized model 
 for comparing with federated learning. 
 """
-import os 
+
+import os
+import sys 
+sys.path.insert(0, os.getcwd())
+print(sys.path)
 import pandas as pd 
+import numpy as np 
+
+from fedgraphconv.prep_mhealth import prep_mhealth
+from fedgraphconv.prep_wisdm import prep_wisdm
+from fedgraphconv.data_utils import HARDataCentral
+from fedgraphconv.models import GCN_mhealth, GCN_wisdm
+
 import torch 
 import torch.nn as nn 
-import numpy as np 
-import networkx as nx 
-from torch_geometric.data import InMemoryDataset, Data
-from prep_mhealth import prep_mhealth
-from prep_wisdm import prep_wisdm
-from torch.nn import Linear 
 import torch.optim as optim 
-from torch_geometric.nn import GCNConv
-import time
+from torch.utils.data import DataLoader
+
 import tqdm 
-import random
-import copy
-from torch_geometric.data import DataLoader
-from model_utils import * 
-import datetime as dttm 
 import argparse
-from mlflow import log_metric, log_param, log_artifacts
+
 import mlflow 
+from mlflow import log_metric, log_param, log_artifacts
+
 
 def train(data, criterion):
     model.train()
@@ -89,7 +91,7 @@ if __name__ == '__main__':
     
     args = parser.parse_args()    
     if args.data == 'mhealth': 
-        # prep_mhealth(args.num_sample, args.dist_thresh, args.train_prop)
+        prep_mhealth(args.num_sample, args.dist_thresh, args.train_prop)
         num_class = 12
         input_dim = 23
         DATADIR  = 'data/processed/mhealth'

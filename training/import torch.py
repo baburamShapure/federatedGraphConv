@@ -29,4 +29,4 @@ class GCN(torch.nn.Module):
 
 model = GCN()
 
-sum(p.numel() for p in model.parameters())
+# sum(p.numel() for p in model.parameters())

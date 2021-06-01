@@ -9,8 +9,10 @@ parser = argparse.ArgumentParser()
 
 def prep_mhealth(num_sample,  dist_thresh, train_prop):
     # change to others. 
+    print('Preparing Data. ')
     DATADIR = 'data\MHEALTHDATASET'
 
+    #TODO: parallelize this
     for each_file in os.listdir(DATADIR):
         if 'log' in each_file: 
             user = each_file.split('_')[1].split('.')[0][7:] 

@@ -50,6 +50,7 @@ def prepare_graph(user_data, THRESHOLD = 3):
     """given the data for a user 
     prepare the graph. 
     """
+    #TODO: parameterize number of features. e.g. 23. 
     # prepare the distance matrix. 
     dist_mat = pd.DataFrame(sp.distance_matrix(user_data.iloc[:, :23].values, 
                                                user_data.iloc[:, :23].values))

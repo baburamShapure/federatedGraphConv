@@ -2,7 +2,7 @@ artifact_uri: file:///C:/Users/abhi/Documents/GEEK/GNN/ours/mlruns/3/08420137e4f
 end_time: 1617018746801
 entry_point_name: ''
 experiment_id: '3'
-lifecycle_stage: active
+lifecycle_stage: deleted
 name: ''
 run_id: 08420137e4f24b71b53d2c62cfbc718a
 run_uuid: 08420137e4f24b71b53d2c62cfbc718a

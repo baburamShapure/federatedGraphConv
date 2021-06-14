@@ -1,21 +1,34 @@
 import os 
+import sys 
+sys.path.insert(0, os.getcwd())
+
+import numpy as np 
 import pandas as pd 
+
 import torch 
 import torch.nn as nn 
-import numpy as np 
-import networkx as nx 
-from torch_geometric.data import InMemoryDataset, Data
 from torch.nn import Linear 
 import torch.optim as optim 
+
+import networkx as nx 
+from torch_geometric.data import InMemoryDataset, Data
 from torch_geometric.nn import GCNConv
+
+import argparse
+import mlflow 
+
+from fedgraphconv.prep_mhealth import prep_mhealth
+from fedgraphconv.prep_wisdm import prep_wisdm
+
+from fedgraphconv.data_utils import HARData, HARDataCentral
+from fedgraphconv.models import GCN_mhealth, GCN_wisdm
+
+from fedgraphconv.fed_utils import average_weights
+
 import time
 import tqdm 
 import random
-import copy
-from model_utils import * 
-import argparse
-import mlflow 
-from prep_mhealth import prep_mhealth
+import copy 
 
 parser = argparse.ArgumentParser()
 
@@ -23,9 +36,8 @@ parser.add_argument('--data',
                     default= 'wisdm',
                     help = 'Dataset to use')
 
-
 parser.add_argument('--num_sample', 
-                    default= 128, 
+                    default= 32, 
                     type= int,
                     help =  'Number of samples in each window')
 
@@ -64,7 +76,6 @@ parser.add_argument('--fl_sample',
                     type = float, 
                     help = 'Proportion of agents that participate in each federation round')
 
-
 def train(data, criterion):
     model.train()
     optimizer.zero_grad()  
@@ -91,13 +102,14 @@ if __name__ == '__main__':
     # prep_mhealth(args.num_sample, args.dist_thresh, args.train_prop)
     DATADIR  = 'data/processed'
     if args.data == 'mhealth': 
-        # prep_mhealth(args.num_sample, args.dist_thresh, args.train_prop)
+        prep_mhealth(args.num_sample, args.dist_thresh, args.train_prop)
         num_class = 12
         input_dim = 23
         DATADIR  = 'data/processed/mhealth'
         global_model = GCN_mhealth(input_dim, num_class)
+    
     elif args.data == 'wisdm': 
-        # prep_wisdm()
+        prep_wisdm(args.num_sample, args.dist_thresh, args.train_prop)
         num_class = 6
         input_dim = 9
         DATADIR  = 'data/processed/wisdm'
@@ -129,14 +141,18 @@ if __name__ == '__main__':
         _a = 0
         for each_agent in agents_to_train: 
             # read the data. 
-            dataset  = HARData(os.path.join(DATADIR, str(each_agent)))[0]
-            loss = nn.CrossEntropyLoss()
-            model = copy.deepcopy(global_model)
-            optimizer = optim.Adam(model.parameters())
-            for epoch in range(EPOCHS):
-                loss_ = train(dataset, loss)
-            model_list.append(model.state_dict())
-    
+            try:
+                # to bypass empty column exception. 
+                dataset  = HARData(os.path.join(DATADIR, str(each_agent)))[0]
+                loss = nn.CrossEntropyLoss()
+                model = copy.deepcopy(global_model)
+                optimizer = optim.Adam(model.parameters())
+                for epoch in range(EPOCHS):
+                    loss_ = train(dataset, loss)
+                model_list.append(model.state_dict())
+            except: 
+                pass 
+            
         # average weight at end of round. 
         avg_weights = average_weights(model_list)
         global_model.load_state_dict(avg_weights)

@@ -50,7 +50,7 @@ parser.add_argument('--epochs',
                     help = 'Number of epochs to run')
 
 parser.add_argument('--batch_size', 
-                    default= 4, 
+                    default= 128, 
                     type = int, 
                     help = 'Batch size in each iteration')
 
@@ -91,7 +91,7 @@ for each_agent in agents:
 
 hardata_trn = SimpleHAR(train_x, train_y)
 
-loader_train = DataLoader(hardata_trn, 256, shuffle = True)
+loader_train = DataLoader(hardata_trn, args.batch_size, shuffle = True)
 # loader_tst = DataLoader(hardata_tst, 32, shuffle = True)
 
 
@@ -120,10 +120,10 @@ optimizer = optim.Adam(model.parameters(), lr = args.lr)
 scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.99)
 loss_fn = nn.CrossEntropyLoss() 
 
-EPOCHS = 100
+EPOCHS = args.epochs
 params = {"epochs": EPOCHS ,
-          "lr" : 0.01, 
-          "batch_size" :256
+          "lr" : args.lr, 
+          "batch_size" :args.batch_size
          }
 
 mlflow.log_params(params)

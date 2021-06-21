@@ -2,6 +2,11 @@
 for comparing with federated learning. 
 """
 import os 
+import sys
+sys.path.insert(0, os.getcwd())
+
+from fedgraphconv.models import GCN_mhealth_Attn, GCN_mhealth
+import os 
 import pandas as pd 
 import torch 
 import torch.nn as nn 
@@ -79,7 +84,7 @@ parser.add_argument('--batch_size',
                     help = 'Batch size in each iteration')
 
 parser.add_argument('--lr', 
-                    default= 0.01, 
+                    default= 0.001, 
                     type = float, 
                     help = 'Learning rate')
 
@@ -93,7 +98,7 @@ if __name__ == '__main__':
         num_class = 12
         input_dim = 23
         DATADIR  = 'data/processed/mhealth'
-        model = GCN_mhealth(input_dim, num_class)
+        model = GCN_mhealth_Attn(input_dim, num_class)#, num_heads=16, hid_dim= 256)
     
     elif args.data == 'wisdm': 
         prep_wisdm(args.num_sample, args.dist_thresh, args.train_prop)
@@ -138,6 +143,7 @@ if __name__ == '__main__':
         for each_data in dataset: 
             try:
                 accuracy = evaluate(each_data)
+                print('acc :', accuracy)
             except Exception as e : 
                 print('i :->', ii )
                 print(e)
@@ -147,6 +153,7 @@ if __name__ == '__main__':
             metrics['accuracy-agent_{0}'.format(ii)]=  accuracy.item()
             ii+=1 
         metrics['accuracy'] = glob_a / glob_n
+        # print('Accuracy: {0:.2f}\n'.format(metrics['accuracy']))
         mlflow.log_metrics(metrics, step = epoch)
         step += 1
          

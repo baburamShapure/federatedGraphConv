@@ -43,6 +43,9 @@ class HARData(InMemoryDataset):
         edge_index = torch.tensor(edge_index, dtype= torch.long).t().contiguous()
         x = torch.tensor(x, dtype=torch.float)
         y = torch.tensor(y, dtype= torch.long)
+
+        # normalize. 
+        x = (x - x.mean(axis=0)) / x.std(axis=0)
         
         # create a tensor of boolean values 
         # to randomly mask out test data points. 
@@ -61,11 +64,11 @@ class HARDataCentral(InMemoryDataset):
 
     create a list instead a single dataframe. 
     """
-    def __init__(self, dir, TRAIN_PROP=0.7):
+    def __init__(self, dir, TRAIN_PROP=0.7, normalize = True):
         super().__init__()
         data_components = ['edge_list.txt', 'node_attributes.txt', 'node_labels']
         #TODO: check if all component text files are present. 
-        
+    
         datalist = []
         all_agents = os.listdir(dir)
         for each_agent in all_agents: 
@@ -80,6 +83,10 @@ class HARDataCentral(InMemoryDataset):
             # convert to tensors. 
             edge_index = torch.tensor(edge_index, dtype= torch.long).t().contiguous()
             x = torch.tensor(x, dtype=torch.float)
+
+            if normalize: 
+                x = (x - x.mean(axis=0)) / x.std(axis=0)
+            
             y = torch.tensor(y, dtype= torch.long)
             # create a tensor of boolean values 
             # to randomly mask out test data points. 

@@ -21,7 +21,7 @@ from fedgraphconv.prep_mhealth import prep_mhealth
 from fedgraphconv.prep_wisdm import prep_wisdm
 
 from fedgraphconv.data_utils import HARData, HARDataCentral
-from fedgraphconv.models import GCN_mhealth, GCN_wisdm
+from fedgraphconv.models import GCN_mhealth, GCN_mhealth_Attn, GCN_wisdm, GCN_wisdm_Attn
 
 from fedgraphconv.fed_utils import average_weights
 
@@ -76,13 +76,16 @@ parser.add_argument('--fl_sample',
                     type = float, 
                     help = 'Proportion of agents that participate in each federation round')
 
+parser.add_argument('--attention', 
+                    default=True,  
+                    help = 'Use graph attention instead of convolution.')
+
 def train(data, criterion):
     model.train()
     optimizer.zero_grad()  
     out = model(data.x, data.edge_index)  
     y = data.y.squeeze().t() - 1
     loss = criterion(out[data.train_mask], y[data.train_mask] ) 
-    accuracy = torch.mean((torch.argmax(out[~data.train_mask] , 1) == y[~data.train_mask]).float())
     loss.backward() 
     optimizer.step()  
     return loss
@@ -90,30 +93,41 @@ def train(data, criterion):
 def evaluate(data): 
     global_model.eval()
     y = data.y.squeeze().t() - 1
-    out = global_model(data.x, data.edge_index)  
-    accuracy = torch.mean((torch.argmax(out[~data.train_mask] , 1) == y[~data.train_mask]).float())
+    with torch.no_grad():
+        out = global_model(data.x, data.edge_index)  
+        accuracy = torch.mean((torch.argmax(out[~data.train_mask] , 1) == y[~data.train_mask]).float())
     return accuracy
+
 
 if __name__ == '__main__':
 
-    mlflow.set_experiment('gnn_federated')
-
     args = parser.parse_args()
-    # prep_mhealth(args.num_sample, args.dist_thresh, args.train_prop)
+    
+    if args.attention == True:
+        mlflow.set_experiment('gnn_federated_attention')
+    else:
+        mlflow.set_experiment('gnn_federated')
+
     DATADIR  = 'data/processed'
     if args.data == 'mhealth': 
-        prep_mhealth(args.num_sample, args.dist_thresh, args.train_prop)
+        # prep_mhealth(args.num_sample, args.dist_thresh, args.train_prop)
         num_class = 12
         input_dim = 23
         DATADIR  = 'data/processed/mhealth'
-        global_model = GCN_mhealth(input_dim, num_class)
+        if args.attention:
+            global_model = GCN_mhealth_Attn(input_dim, num_class)
+        else:
+            global_model = GCN_mhealth(input_dim, num_class)
     
     elif args.data == 'wisdm': 
-        prep_wisdm(args.num_sample, args.dist_thresh, args.train_prop)
+        # prep_wisdm(args.num_sample, args.dist_thresh, args.train_prop)
         num_class = 6
         input_dim = 9
         DATADIR  = 'data/processed/wisdm'
-        global_model = GCN_wisdm(input_dim, num_class)
+        if args.attention:
+            global_model = GCN_wisdm_Attn(input_dim, num_class)
+        else:
+            global_model = GCN_wisdm(input_dim, num_class)
     
     mlflow.set_tag('dataset', args.data)
     
@@ -122,7 +136,6 @@ if __name__ == '__main__':
     FL_SAMPLE = args.fl_sample
     EPOCHS = args.local_epochs
     
-
     mlflow.log_params({
                         'num_sample': args.num_sample, 
                         'dist_thresh': args.dist_thresh, 
@@ -141,18 +154,16 @@ if __name__ == '__main__':
         _a = 0
         for each_agent in agents_to_train: 
             # read the data. 
-            try:
-                # to bypass empty column exception. 
-                dataset  = HARData(os.path.join(DATADIR, str(each_agent)))[0]
-                loss = nn.CrossEntropyLoss()
-                model = copy.deepcopy(global_model)
-                optimizer = optim.Adam(model.parameters())
-                for epoch in range(EPOCHS):
-                    loss_ = train(dataset, loss)
-                model_list.append(model.state_dict())
-            except: 
-                pass 
             
+            dataset  = HARData(os.path.join(DATADIR, str(each_agent)))[0]
+            loss = nn.CrossEntropyLoss()
+            model = copy.deepcopy(global_model)
+            optimizer = optim.Adam(model.parameters(), args.lr, weight_decay= 0.1)
+            for epoch in range(EPOCHS):
+                loss_ = train(dataset, loss)
+            
+            model_list.append(model.state_dict())
+                    
         # average weight at end of round. 
         avg_weights = average_weights(model_list)
         global_model.load_state_dict(avg_weights)
@@ -163,9 +174,10 @@ if __name__ == '__main__':
         for each_data in dataset: 
             accuracy = evaluate(each_data) # evaluate the global model on each data. 
             metrics['accuracy-agent_{0}'.format(i)]=  accuracy.item()
-            _n += each_data.num_nodes
-            _a += each_data.num_nodes * accuracy.item()
+            _n += each_data.x[~each_data.train_mask].size()[0]
+            _a += each_data.x[~each_data.train_mask].size()[0] * accuracy.item()
             i+=1
         metrics['accuracy'] = _a / _n
         mlflow.log_metrics(metrics, step = each_round)
+        # print(metrics['accuracy'])
            

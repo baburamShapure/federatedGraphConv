@@ -46,25 +46,22 @@ class GCN_mhealth(torch.nn.Module):
 
 class GCN_mhealth_Attn(torch.nn.Module):
     def __init__(self, input_dim, num_class):
-        super(GCN_wisdm_Attn, self).__init__()
+        super(GCN_mhealth_Attn, self).__init__()
         torch.manual_seed(12345)
-        self.conv1 = GATConv(input_dim, 64, heads=4, dropout = 0.6) #make sure to change later. 
+        self.conv1 = GATConv(input_dim, 128, 4)
+        self.fc1 = nn.Linear(128 * 4, 64)
+        self.fc2 = nn.Linear(64, num_class)
         self.dropout = nn.Dropout(0.5)
-        self.bn1 = nn.BatchNorm1d(64 * 4)
-        self.fc2 = nn.Linear(64 * 4, 128)
-        self.out = nn.Linear(128, num_class)    
 
     def forward(self, x, edge_index):
         h = self.conv1(x, edge_index)
         h = h.relu()
-        h = self.dropout(h)
         # Apply a final (linear) classifier.
-        h = self.bn1(h)
-        h = self.fc2(h)
+        h = self.fc1(h)
         h = h.relu()
-        h = self.dropout(h)
-        out = self.out(h)
-        return out 
+        h = self.fc2(h)
+
+        return h
 
 class GCN_wisdm(torch.nn.Module):
     def __init__(self, input_dim, num_class):
@@ -93,21 +90,25 @@ class GCN_wisdm_Attn(torch.nn.Module):
     def __init__(self, input_dim, num_class):
         super(GCN_wisdm_Attn, self).__init__()
         torch.manual_seed(12345)
-        self.conv1 = GATConv(input_dim, 64, heads=4, dropout = 0.6) #make sure to change later. 
-        self.dropout = nn.Dropout(0.5)
-        self.bn1 = nn.BatchNorm1d(64 * 4)
-        self.fc2 = nn.Linear(64 * 4, 128)
+        self.conv1 = GATConv(input_dim, 1024, heads=1, dropout=0.5) #make sure to change later. 
+        self.conv2 = GATConv(input_dim, 512, heads=1, dropout=0.5)
+        self.conv3 = GATConv(input_dim, 256, heads=1, dropout=0.5)
+        # self.dropout = nn.Dropout(0.5)
+        self.fc2 = nn.Linear(256 * 1, 128)
         self.out = nn.Linear(128, num_class)    
 
     def forward(self, x, edge_index):
         h = self.conv1(x, edge_index)
         h = h.relu()
-        h = self.dropout(h)
+        h = self.conv2(x, edge_index)
+        h = h.relu()
+        h = self.conv3(x, edge_index)
+        h = h.relu()
+        # h = self.dropout(h)
         # Apply a final (linear) classifier.
-        h = self.bn1(h)
         h = self.fc2(h)
         h = h.relu()
-        h = self.dropout(h)
+        # h = self.dropout(h)
         out = self.out(h)
         return out 
 

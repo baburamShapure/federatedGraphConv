@@ -93,7 +93,7 @@ if __name__ == '__main__':
     args = parser.parse_args()    
     if args.data == 'mhealth': 
         prep_mhealth(args.num_sample, args.dist_thresh, args.train_prop)
-        num_class = 12
+        num_class = 12 
         input_dim = 23
         DATADIR  = 'data/processed/mhealth'
         model = GCN_mhealth(input_dim, num_class)
@@ -106,7 +106,7 @@ if __name__ == '__main__':
         DATADIR  = 'data/processed/wisdm'
         model = GCN_wisdm(input_dim, num_class)
 
-    print(sum(p.numel() for p in model.parameters()))
+    model_params = sum(p.numel() for p in model.parameters())
 
     mlflow.set_tag('dataset', args.data)
     EPOCHS = args.epochs
@@ -124,7 +124,8 @@ if __name__ == '__main__':
                       'train_prop' : args.train_prop, 
                       'batch_size': BATCH_SIZE, 
                       'max_epochs' : EPOCHS, 
-                      'lr': args.lr
+                      'lr': args.lr,
+                      'num_parameters': model_params
                       })
 
     logs = pd.DataFrame(columns=['epoch', 'agent', 'accuracy'])

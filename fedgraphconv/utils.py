@@ -30,7 +30,7 @@ def add_encoded_activity(filename, datadir):
     user_data['activity'] =  user_data['encoded_activity'].map(activity_map)
     user_data['user_id'] = filename.split('_')[1].split('.')[0][7:]
     return user_data[user_data['encoded_activity'] > 0 ]
-
+ 
 def average_slice(df_, NUM_SAMPLE = 128):
     """prepare time slices and 
     average over each time slice. 
@@ -46,7 +46,7 @@ def average_slice(df_, NUM_SAMPLE = 128):
     out.index = range(out.shape[0])
     return out
 
-def prepare_graph(user_data, THRESHOLD = 3):
+def prepare_graph(user_data, THRESHOLD = 3, ret_distmat = False):
     """given the data for a user 
     prepare the graph. 
     """
@@ -71,10 +71,14 @@ def prepare_graph(user_data, THRESHOLD = 3):
         # all elements close to row. First is default by itself. 
         neighbors = list(tmp[tmp <= THRESHOLD].index)
 
+
         for each_neighbor in neighbors[1: ]: 
             G.add_edge(idx,  each_neighbor , weight = row[each_neighbor])
 
-    return G
+    if not ret_distmat: 
+        return G
+    else: 
+        return G, dist_mat
 
 def write_node_attributes(G, dir): 
     __  = G.nodes.data()

@@ -7,6 +7,8 @@ import random
 import scipy.spatial as sp 
 import scipy.stats as stats
 import tqdm 
+import shutil
+import argparse
 
 # datadir = 'data/WISDM_ar_v1.1'
 
@@ -25,7 +27,26 @@ activity_map['Upstairs']= 3
 activity_map['Downstairs']= 4
 activity_map['Sitting']= 5
 activity_map['Standing'] = 6
-  
+
+parser = argparse.ArgumentParser()
+
+parser.add_argument('--num_sample', 
+                    type = int,
+                    default= 128, 
+                    help =  'Number of samples in each window')
+
+parser.add_argument('--dist_thresh', 
+                    default= 0.3, 
+                    type = float,
+                    help =  'Minimum euclidean distance to draw an edge')
+
+parser.add_argument('--train_prop', 
+                    default= 0.7, 
+                    type = float,
+                    help =  'Proportion of data to include in training.')
+
+
+ 
 
 def add_encoded_activity(filename, datadir, sep = "\t"):
     """given raw user data 
@@ -118,31 +139,62 @@ def write_graph(G, dir):
 def prep_wisdm(num_sample, dist_thresh, train_prop): 
     print('Preparing Data. ')
     DATADIR = 'data\WISDM'
-    for each_file in tqdm.tqdm(os.listdir(DATADIR)):
-        if each_file not in ['wisdm_subject'+str(i) for i in [4, 7, 16, 20, 33, 35 ]]:
-            # print(each_file)
-            user = each_file.split('_')[1].split('.')[0][7:] 
-            tmp = add_encoded_activity(each_file, DATADIR, sep =',')
-            tmp1 = average_slice(tmp, num_sample)
-            
-            gr = prepare_graph(tmp1, dist_thresh)
+    
+    # # check if data exists in cache. 
+    foldertolookfor = 'wisdm_{0}_{1}_{2}'.format(num_sample, dist_thresh, train_prop)
+    if foldertolookfor in os.listdir(os.path.join('data', 'processed', 'cached')):
+        print('Found in cache.\n')
+        # data already exists. Just copy. 
+        
+        shutil.rmtree(os.path.join('data', 'processed', 'wisdm'))
+        
+        shutil.copytree(os.path.join('data', 'processed', 'cached', foldertolookfor), 
+                        os.path.join('data', 'processed', 'wisdm'))
+    
+    else:
+        print("Did not find data in Cache. ")
+        cache_dir = os.path.join('data', 'processed', 'cached', foldertolookfor)           
+        print(cache_dir)
+        os.mkdir(cache_dir)
+        for each_file in tqdm.tqdm(os.listdir(DATADIR)):
+            if each_file not in ['wisdm_subject'+str(i) for i in [4, 7, 16, 20, 33, 35 ]]:
+                # print(each_file)
+                user = each_file.split('_')[1].split('.')[0][7:] 
+                tmp = add_encoded_activity(each_file, DATADIR, sep =',')
+                tmp1 = average_slice(tmp, num_sample)
+                gr = prepare_graph(tmp1, dist_thresh)
+                
 
-            if user not in os.listdir('data\processed\wisdm'): 
-                os.mkdir(os.path.join('data\processed\wisdm', user))
-            
-            tmp1.iloc[:, :9].to_csv(os.path.join('data\processed\wisdm', user, 'node_attributes' + '.txt'), 
-                                    header = None, index = None)
-            # prepare training mask. 
-            ar = pd.DataFrame(np.random.uniform(0, 1,   
-                                tmp1.shape[0]) >= 1 - train_prop, 
-                                columns = ['train_mask'])
+                if user not in os.listdir('data\processed\wisdm'): 
+                    os.mkdir(os.path.join('data\processed\wisdm', user))
+                
+                if user not in os.listdir(cache_dir): 
+                    os.mkdir(os.path.join(cache_dir, user))
 
-            tmp1['encoded_activity'].to_csv(os.path.join('data\processed\wisdm', user, 'node_labels' + '.txt'), 
-                                            header = None, index = None)
-            ar.to_csv(os.path.join('data\processed\wisdm', user, 'train_mask.txt'), 
-                                            header = None, index = None)
-            write_graph(gr, os.path.join('data\processed\wisdm', user))
+                tmp1.iloc[:, :9].to_csv(os.path.join('data\processed\wisdm', user, 'node_attributes' + '.txt'), 
+                                        header = None, index = None)
+                # prepare training mask. 
+                ar = pd.DataFrame(np.random.uniform(0, 1,   
+                                    tmp1.shape[0]) >= 1 - train_prop, 
+                                    columns = ['train_mask'])
+
+                tmp1['encoded_activity'].to_csv(os.path.join('data\processed\wisdm', user, 'node_labels' + '.txt'), 
+                                                header = None, index = None)
+                ar.to_csv(os.path.join('data\processed\wisdm', user, 'train_mask.txt'), 
+                                                header = None, index = None)
+                write_graph(gr, os.path.join('data\processed\wisdm', user))
+
+                # write in cache dir also. 
+                tmp1.iloc[:, :9].to_csv(os.path.join(cache_dir, user, 'node_attributes' + '.txt'), 
+                                        header = None, index = None)
+                tmp1['encoded_activity'].to_csv(os.path.join(cache_dir, user, 'node_labels' + '.txt'), 
+                                                header = None, index = None)
+                ar.to_csv(os.path.join(cache_dir, user, 'train_mask.txt'), 
+                                                header = None, index = None)
+                write_graph(gr, os.path.join(cache_dir, user))
+
     print('Data preparation finished. ')
 
-if __name__ == '__main__': 
-    prep_wisdm(128, 1, 0.7)
+if __name__ == '__main__':
+    args = parser.parse_args()
+    prep_wisdm(args.num_sample, args.dist_thresh, args.train_prop)

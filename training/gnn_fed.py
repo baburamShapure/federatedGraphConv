@@ -30,6 +30,12 @@ import tqdm
 import random
 import copy 
 
+import datetime as dttm
+since = dttm.datetime.now()
+since_str = dttm.datetime.strftime(since, '%d-%m-%y %H:%M:%S')
+
+
+
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--data',
@@ -77,7 +83,7 @@ parser.add_argument('--fl_sample',
                     help = 'Proportion of agents that participate in each federation round')
 
 parser.add_argument('--attention', 
-                    default=True,  
+                    default=False,  
                     help = 'Use graph attention instead of convolution.')
 
 def train(data, criterion):
@@ -103,14 +109,15 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     
-    if args.attention == True:
+    if args.attention:
         mlflow.set_experiment('gnn_federated_attention')
     else:
-        mlflow.set_experiment('gnn_federated')
+        print("setting attention to false")
+        mlflow.set_experiment('gnn_federated_1')
 
     DATADIR  = 'data/processed'
     if args.data == 'mhealth': 
-        # prep_mhealth(args.num_sample, args.dist_thresh, args.train_prop)
+        prep_mhealth(args.num_sample, args.dist_thresh, args.train_prop)
         num_class = 12
         input_dim = 23
         DATADIR  = 'data/processed/mhealth'
@@ -120,7 +127,7 @@ if __name__ == '__main__':
             global_model = GCN_mhealth(input_dim, num_class)
     
     elif args.data == 'wisdm': 
-        # prep_wisdm(args.num_sample, args.dist_thresh, args.train_prop)
+        prep_wisdm(args.num_sample, args.dist_thresh, args.train_prop)
         num_class = 6
         input_dim = 9
         DATADIR  = 'data/processed/wisdm'
@@ -146,6 +153,7 @@ if __name__ == '__main__':
                         'fl_sample': FL_SAMPLE
                       })
     
+    excel = []
     for each_round in tqdm.tqdm(range(NUM_ROUNDS)): 
         agents_to_train = random.sample(FL_AGENTS, k= int(FL_SAMPLE * len(FL_AGENTS)))
         model_list = []
@@ -158,7 +166,7 @@ if __name__ == '__main__':
             dataset  = HARData(os.path.join(DATADIR, str(each_agent)))[0]
             loss = nn.CrossEntropyLoss()
             model = copy.deepcopy(global_model)
-            optimizer = optim.Adam(model.parameters(), args.lr, weight_decay= 0.1)
+            optimizer = optim.Adam(model.parameters(), args.lr)
             for epoch in range(EPOCHS):
                 loss_ = train(dataset, loss)
             
@@ -179,5 +187,10 @@ if __name__ == '__main__':
             i+=1
         metrics['accuracy'] = _a / _n
         mlflow.log_metrics(metrics, step = each_round)
-        # print(metrics['accuracy'])
+        now = dttm.datetime.now()
+        excel.append((epoch, since_str, _a / _n, now.strftime('%y-%m-%d %H:%M:%S'), (now-since).total_seconds()))
+    
+    df = pd.DataFrame(excel)
+    df.columns =['epoch', 'time_start', 'accuracy', 'log_time', 'time_elapsed']
+    df.to_csv('logs_{0}_gnn_federated.csv'.format(args.data), index= None)
            

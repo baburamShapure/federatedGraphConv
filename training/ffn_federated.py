@@ -29,6 +29,11 @@ import argparse
 import mlflow 
 from mlflow import log_metric, log_param, log_artifacts
 
+import datetime as dttm 
+since = dttm.datetime.now()
+since_str = dttm.datetime.strftime(since, '%d-%m-%y %H:%M:%S')
+
+
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--data',
@@ -87,16 +92,16 @@ def evaluate(data):
 if __name__ == '__main__':
 
     args = parser.parse_args()
-    mlflow.set_experiment('ffn_federated')
+    mlflow.set_experiment('ffn_federated_1')
 
     if args.data == 'mhealth': 
-        # prep_mhealth(args.num_sample, args.dist_thresh, args.train_prop)
+        prep_mhealth(args.num_sample, args.dist_thresh, args.train_prop)
         num_class = 12 
         input_dim = 23
         DATADIR  = 'data/processed/mhealth'
         
     elif args.data == 'wisdm': 
-        # prep_wisdm(args.num_sample, args.dist_thresh, args.train_prop)
+        prep_wisdm(args.num_sample, args.dist_thresh, args.train_prop)
         num_class = 6
         input_dim = 9
         DATADIR  = 'data/processed/wisdm'
@@ -118,6 +123,7 @@ if __name__ == '__main__':
 
     global_model = FFN(input_dim, num_class) 
 
+    excel = []
     for each_round in tqdm.tqdm(range(NUM_ROUNDS)): 
         agents_to_train = random.sample(FL_AGENTS, k= int(FL_SAMPLE * len(FL_AGENTS)))
         model_list = []
@@ -170,5 +176,9 @@ if __name__ == '__main__':
         
         metrics['accuracy'] = _a / _n
         mlflow.log_metrics(metrics, step = each_round)
-        # print(metrics['accuracy'])
+        now = dttm.datetime.now()
+        excel.append((epoch, since_str, _a / _n, now.strftime('%y-%m-%d %H:%M:%S'), (now-since).total_seconds()))
     
+    df = pd.DataFrame(excel)
+    df.columns =['epoch', 'time_start', 'accuracy', 'log_time', 'time_elapsed']
+    df.to_csv('logs_{0}_ffn_federated.csv'.format(args.data), index= None)

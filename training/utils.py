@@ -53,8 +53,9 @@ def prepare_graph(user_data, THRESHOLD = 3):
     prepare the graph. 
     """
     # prepare the distance matrix. 
-    dist_mat = pd.DataFrame(sp.distance_matrix(user_data.iloc[:, :23].values, 
-                                               user_data.iloc[:, :23].values))
+    dist_mat = pd.DataFrame(sp.distance.cdist(user_data.iloc[:, :23].values, 
+                                               user_data.iloc[:, :23].values, 
+                                               metric = 'mahalanobis'))
 
     cols = random.choices(list(mcolors.CSS4_COLORS.keys()), k =15)
     cols_dict = {}

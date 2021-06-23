@@ -8,6 +8,9 @@ sys.path.insert(0, os.getcwd())
 import pandas as pd 
 import numpy as np 
 
+from fedgraphconv.prep_mhealth import *
+from fedgraphconv.prep_wisdm import *
+
 from fedgraphconv.data_utils import SimpleHAR
 from fedgraphconv.models import FFN 
 
@@ -23,6 +26,11 @@ import argparse
 import mlflow 
 from mlflow import log_metric, log_param, log_artifacts
 
+import datetime as dttm 
+
+since = dttm.datetime.now()
+since_str = dttm.datetime.strftime(since, '%d-%m-%y %H:%M:%S')
+
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--data',
@@ -30,7 +38,7 @@ parser.add_argument('--data',
                     default='mhealth')
 
 parser.add_argument('--num_sample', 
-                    default= 32, 
+                    default= 128, 
                     type= int,
                     help =  'Number of samples in each window')
 
@@ -61,18 +69,33 @@ parser.add_argument('--lr',
 
 args = parser.parse_args() 
 
-mlflow.set_experiment('ffn_central')
-datadir = os.path.join('data/processed/',  args.data)
+mlflow.set_experiment('ffn_central_1')
 
-print('Current wd: {0}'.format(os.getcwd()))
+if args.data == 'mhealth': 
+    prep_mhealth(args.num_sample, args.dist_thresh, args.train_prop)
+    num_class = 12
+    input_dim = 23
+    DATADIR  = 'data/processed/mhealth'
+    model = FFN(input_dim, num_class)
 
-agents = [i for i in os.listdir(datadir) if i != 'later']
-print(agents)
+elif args.data == 'wisdm': 
+    prep_wisdm(args.num_sample, args.dist_thresh, args.train_prop)
+    num_class = 6
+    input_dim = 9
+    DATADIR  = 'data/processed/wisdm'
+    model = FFN(input_dim, num_class)
+
+agents = [i for i in os.listdir(DATADIR) if i != 'later']
+# print(agents)
+mlflow.set_tag('dataset', args.data)
+
 
 train_x = []
 test_x = []
 train_y = []
 test_y = []
+
+datadir = DATADIR #weird!
 
 for each_agent in agents: 
     x = pd.read_csv(os.path.join(datadir, each_agent, 'node_attributes.txt'), 
@@ -95,22 +118,6 @@ loader_train = DataLoader(hardata_trn, args.batch_size, shuffle = True)
 # loader_tst = DataLoader(hardata_tst, 32, shuffle = True)
 
 
-if args.data == 'mhealth': 
-    # prep_mhealth(args.num_sample, args.dist_thresh, args.train_prop)
-    num_class = 12
-    input_dim = 23
-    DATADIR  = 'data/processed/mhealth'
-    model = FFN(input_dim, num_class)
-
-elif args.data == 'wisdm': 
-    # prep_wisdm(args.num_sample, args.dist_thresh, args.train_prop)
-    num_class = 6
-    input_dim = 9
-    DATADIR  = 'data/processed/wisdm'
-    model = FFN(input_dim, num_class)
-
-mlflow.set_tag('dataset', args.data)
-
 
 
 # model = FFN() 
@@ -123,10 +130,13 @@ loss_fn = nn.CrossEntropyLoss()
 EPOCHS = args.epochs
 params = {"epochs": EPOCHS ,
           "lr" : args.lr, 
-          "batch_size" :args.batch_size
+          "batch_size" :args.batch_size,
+          'num_sample': args.num_sample,
+          'dist_thresh': args.dist_thresh
          }
 
 mlflow.log_params(params)
+excel = []
 
 for epoch in tqdm.tqdm(range(EPOCHS)):
     model.train()
@@ -154,4 +164,9 @@ for epoch in tqdm.tqdm(range(EPOCHS)):
      
     metrics['accuracy'] = glob_a / glob_n    
     mlflow.log_metrics(metrics, step= epoch)
+    now = dttm.datetime.now()
+    excel.append((epoch, since_str, glob_a/glob_n, now.strftime('%y-%m-%d %H:%M:%S'), (now-since).total_seconds()))
     
+df = pd.DataFrame(excel)
+df.columns =['epoch', 'time_start', 'accuracy', 'log_time', 'time_elapsed']
+df.to_csv('logs_{0}_ffn_central.csv'.format(args.data), index= None)

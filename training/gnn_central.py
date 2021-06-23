@@ -12,7 +12,7 @@ import numpy as np
 from fedgraphconv.prep_mhealth import prep_mhealth
 from fedgraphconv.prep_wisdm import prep_wisdm
 from fedgraphconv.data_utils import HARDataCentral
-from fedgraphconv.models import GCN_mhealth, GCN_wisdm
+from fedgraphconv.models import GCN_mhealth, GCN_wisdm, GCN_wisdm_2conv, GCN_wisdm_3conv
 
 import torch 
 import torch.nn as nn 
@@ -26,6 +26,11 @@ import argparse
 import mlflow 
 from mlflow import log_metric, log_param, log_artifacts
 
+import datetime as dttm 
+since = dttm.datetime.now()
+since_str = dttm.datetime.strftime(since, '%d-%m-%y %H:%M:%S')
+
+
 def train(data, criterion):
     model.train()
     optimizer.zero_grad()  
@@ -35,7 +40,7 @@ def train(data, criterion):
     accuracy = torch.mean((torch.argmax(out[~data.train_mask] , 1) == y[~data.train_mask]).float())
     loss.backward() 
     optimizer.step()
-    scheduler.step()  
+    # scheduler.step()  
     return loss
 
 def evaluate(data, test= True): 
@@ -88,7 +93,7 @@ parser.add_argument('--lr',
 
 if __name__ == '__main__':
 
-    mlflow.set_experiment('gnn_central')
+    mlflow.set_experiment('gnn_central_1')
 
     args = parser.parse_args()    
     if args.data == 'mhealth': 
@@ -117,7 +122,7 @@ if __name__ == '__main__':
     loader = DataLoader(dataset, batch_size= BATCH_SIZE, shuffle = True)
     loss = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr = args.lr)
-    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.99)
+    # scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.99)
 
     mlflow.log_params({'num_sample': args.num_sample, 
                       'dist_thresh': args.dist_thresh, 
@@ -130,6 +135,7 @@ if __name__ == '__main__':
 
     logs = pd.DataFrame(columns=['epoch', 'agent', 'accuracy'])
 
+    excel = []
     for epoch in tqdm.tqdm(range(EPOCHS)):
         for i, batch in enumerate(loader): 
             try:
@@ -156,4 +162,9 @@ if __name__ == '__main__':
         metrics['accuracy'] = glob_a / glob_n
         mlflow.log_metrics(metrics, step = epoch)
         step += 1
-         
+        now = dttm.datetime.now()
+        excel.append((epoch, since_str, glob_a/glob_n, now.strftime('%y-%m-%d %H:%M:%S'), (now-since).total_seconds()))
+
+    df = pd.DataFrame(excel)
+    df.columns =['epoch', 'time_start', 'accuracy', 'log_time', 'time_elapsed']
+    df.to_csv('logs_{0}_gnn_central.csv'.format(args.data), index= None)

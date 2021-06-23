@@ -73,13 +73,65 @@ class GCN_wisdm(torch.nn.Module):
         self.fc2 = nn.Linear(256, 128)
         self.out = nn.Linear(128, num_class)
         
-
     def forward(self, x, edge_index):
         h = self.conv1(x, edge_index)
         h = h.relu()
         h = self.dropout(h)
         # Apply a final (linear) classifier.
         h = self.bn1(h)
+        h = self.fc2(h)
+        h = h.relu()
+        h = self.dropout(h)
+        out = self.out(h)
+        return out 
+
+class GCN_wisdm_2conv(torch.nn.Module):
+    def __init__(self, input_dim, num_class):
+        super(GCN_wisdm_2conv, self).__init__()
+        torch.manual_seed(12345)
+        self.conv1 = GCNConv(input_dim, 256)
+        self.conv2 = GCNConv(input_dim, 256)
+        self.dropout = nn.Dropout(0.5)
+        # self.bn1 = nn.BatchNorm1d(256)
+        self.fc2 = nn.Linear(256, 128)
+        self.out = nn.Linear(128, num_class)
+        
+
+    def forward(self, x, edge_index):
+        h = self.conv1(x, edge_index)
+        h = h.relu()
+        h = self.dropout(h)
+        h = self.conv2(x, edge_index)
+        h = h.relu()
+        h = self.dropout(h)
+        # Apply a final (linear) classifier.
+        h = self.fc2(h)
+        h = h.relu()
+        h = self.dropout(h)
+        out = self.out(h)
+        return out 
+
+class GCN_wisdm_3conv(torch.nn.Module):
+    def __init__(self, input_dim, num_class):
+        super(GCN_wisdm_3conv, self).__init__()
+        torch.manual_seed(12345)
+        self.conv1 = GCNConv(input_dim, 256)
+        self.conv2 = GCNConv(input_dim, 256)
+        self.conv3 = GCNConv(input_dim, 256)
+        self.dropout = nn.Dropout(0.5)
+        # self.bn1 = nn.BatchNorm1d(256)
+        self.fc2 = nn.Linear(256, 128)
+        self.out = nn.Linear(128, num_class)
+        
+
+    def forward(self, x, edge_index):
+        h = self.conv1(x, edge_index)
+        h = h.relu()
+        h = self.conv2(x, edge_index)
+        h = h.relu()
+        h = self.conv3(x, edge_index)
+        h = h.relu()
+        # Apply a final (linear) classifier.
         h = self.fc2(h)
         h = h.relu()
         h = self.dropout(h)
